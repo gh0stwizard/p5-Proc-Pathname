@@ -1,4 +1,12 @@
 ~$
-^Proc-Pathname-
-^Makefile.old$
-^MYMETA.*
+MYMETA.*
+Makefile
+Makefile.aperl
+Makefile.old
+Pathname.c
+Proc-Pathname-*
+blib/
+*.o
+perl
+perlmain.c
+pm_to_blib
