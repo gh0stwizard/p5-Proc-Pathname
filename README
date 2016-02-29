@@ -1,0 +1,37 @@
+Proc-Pathname version 0.05
+==========================
+
+Proc::Pathname - Retrieves the fully qualified path for the program
+
+A common way to retrieve a path for the program is using the variable $0.
+However, sometimes it is not working for you. So, you have to find a way
+to retrieve the path for the program somehow differently.
+
+The module is using system calls to do the job and written as XS module.
+This module was made for mine private purposes, mostly, for staticperl.
+
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+  Test
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2016 by Vitaliy V. Tokarev
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.22.0 or,
+at your option, any later version of Perl 5 you may have available.
+
+

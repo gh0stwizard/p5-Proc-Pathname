@@ -1,0 +1,5 @@
+TODO:
+    - provide implemetations for openbsd, netbsd
+    - implement using $! instead of fprintf (stderr, ...)
+    - have to test the implementation on Darwin somehow :>
+    - more tests

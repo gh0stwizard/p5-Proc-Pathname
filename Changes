@@ -1,0 +1,10 @@
+Revision history for Perl extension Proc::Pathname.
+
+0.05  Mon Feb 29 23:38:13 MSK 2016
+    - first implemetation for win32, linux, solaris, freebsd, darwin
+
+
+0.01  Mon Jan  4 13:53:05 2016
+    - original version; created by h2xs 1.23 with options
+        Progname.h -n Proc::Pathname --use-xsloader -b 5.6.0 -A
+
