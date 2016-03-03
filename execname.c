@@ -32,18 +32,18 @@
 #include <unistd.h>
 #include <string.h>
 #include <limits.h>
-#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-    /* Mac OS, Darwin ------------------------------------------- */
+#elif defined(__unix__)
 #include <sys/param.h>
-#warning not tested
-#if defined(BSD)
+#if (defined(__APPLE__) && defined(__MACH__))
+    /* Mac OS, Darwin ------------------------------------------- */
+#elif defined(__FreeBSD__)
     /* BSD (DragonFly BSD, FreeBSD, OpenBSD, NetBSD). ----------- */
-#if defined(__FreeBSD__)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <string.h>
-#endif
+#else
+#error unknown operating system
 #endif
 #else
 #error unknown operating system
@@ -221,7 +221,8 @@ done:
 
 #endif
 /*#endif*/
-#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+#elif defined(__unix__)
+#if (defined(__APPLE__) && defined(__MACH__))
     /* Mac OS, Darwin ------------------------------------------- */
     char path[PATH_MAX];
     uint32_t size = sizeof (path);
@@ -241,8 +242,7 @@ done:
         len = -1;
     }
 
-#elif defined(BSD)
-#if defined(__FreeBSD__)
+#elif defined(__FreeBSD__)
     /* BSD (DragonFly BSD, FreeBSD, OpenBSD, NetBSD). ----------- */
     int len;
     /**
@@ -265,6 +265,9 @@ done:
         error ("malloc error", __LINE__);
         len = -1;
     }
+
+#else
+#error unknown operating system
 #endif
 #else
 #error unknown operating system
