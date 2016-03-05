@@ -338,6 +338,10 @@ done:
      * but openbsd allocates for argv[0] about 16 bytes only (!)
      */
 
+    /*
+     * XXX: remove all stat()/access() checks ??? (see issue1)
+     */
+
     if (strchr (prog, '/') == prog) {
         if ((stat (prog, &sbuf) == 0) && S_ISREG (sbuf.st_mode) 
                 && access(prog, X_OK) == 0)
