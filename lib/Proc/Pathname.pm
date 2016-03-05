@@ -1,7 +1,7 @@
 package Proc::Pathname;
 
 
-our $VERSION = '0.06';
+our $VERSION = '0.08';
 
 require XSLoader;
 XSLoader::load('Proc::Pathname', $VERSION);

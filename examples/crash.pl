@@ -18,3 +18,10 @@ $0 = 'test';
 
 printf "\$0: %s\n\$^X: %s\nprocname: %s\n",
         $0, $^X, Proc::Pathname::get() || "<undefined>";
+
+print "-" x 24, "\n";
+
+$0 = 'again';
+        
+printf "\$0: %s\n\$^X: %s\nprocname: %s\n",
+        $0, $^X, Proc::Pathname::get() || "<undefined>";

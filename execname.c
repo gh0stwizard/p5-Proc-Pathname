@@ -295,10 +295,11 @@ done:
 #elif defined(OpenBSD)
     /* OpenBSD -------------------------------------------------- */
     static char tmp[PATH_MAX];
-    char **argv, *prog, *path, *p, *rpath;
+    char *prog, *path, *p, *rpath, *pathcpy;
     size_t end;
     int mib[4], tmplen;
     struct stat sbuf;
+    struct kinfo_proc kpa[1];
 
     /*
      * On OpenBSD there is no way to find a real full path
@@ -306,32 +307,29 @@ done:
      */
 
     mib[0] = CTL_KERN;
-    mib[1] = KERN_PROC_ARGS;
-    mib[2] = getpid ();
-    mib[3] = KERN_PROC_ARGV;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PID;
+    mib[3] = getpid ();
+    mib[4] = sizeof (struct kinfo_proc);
+    mib[5] = 1;
 
     /* find out argv[] of the current proc first */
 
-    if (sysctl (mib, 4, NULL, &end, NULL, 0) == -1) {
+    if (sysctl (mib, 6, &kpa, &end, NULL, 0) == -1) {
         error (strerror (errno), __LINE__);
         goto error;
     }
 
-    argv = NULL;
-
-    if ((argv = malloc (end)) == NULL) {
-        error ("malloc error", __LINE__);
-        goto error;
-    }
-
-    if (sysctl (mib, 4, argv, &end, NULL, 0) == -1) {
-        error (strerror (errno), __LINE__);
-        goto error;
-    }
 
     /* find a full path as it done by `which' command */
 
-    prog = argv[0];
+    /*
+     * p_comm is differs from argv[0] in way that it does not
+     * contains './' at start of name. And also
+     * p_comm does not modified with in run time even if argv[0]
+     * has been changed.
+     */
+    prog = kpa[0].p_comm;
 
     /*
      * we've to trust that argv[0] is a full path to executable,
@@ -364,7 +362,14 @@ done:
     if ((path = getenv ("PATH")) == NULL || *path == '\0')
         path = _PATH_DEFPATH;
 
-    while ((p = strsep (&path, ":")) != NULL) {
+    /* path returned by getenv() is read-only */
+    if ((path = strdup (path)) == NULL) {
+        error (strerror (errno), __LINE__);
+        goto error;
+    }
+
+    pathcpy = path;
+    while ((p = strsep (&pathcpy, ":")) != NULL) {
         if (*p == '\0')
             p = ".";
 
@@ -378,7 +383,7 @@ done:
             goto error;
         }
 
-        if ((rpath = realpath (tmp, NULL)) == NULL) {
+\        if ((rpath = realpath (tmp, NULL)) == NULL) {
             error (strerror (errno), __LINE__);
             goto error;
         }
@@ -401,11 +406,11 @@ error:
     len = -1;
 
 done:
-    if (argv != NULL)
-        free (argv);
-
     if (rpath != NULL)
         free (rpath);
+
+    if (path != NULL)
+        free (path);
 
 #else
 #error unknown operating system
