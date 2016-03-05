@@ -36,12 +36,22 @@
 #include <sys/param.h>
 #if (defined(__APPLE__) && defined(__MACH__))
     /* Mac OS, Darwin ------------------------------------------- */
+#include <mach-o/dyld.h>
 #elif defined(__FreeBSD__)
-    /* BSD (DragonFly BSD, FreeBSD, OpenBSD, NetBSD). ----------- */
+    /* BSD (DragonFly BSD, FreeBSD, NetBSD). -------------------- */
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <errno.h>
 #include <string.h>
+#elif defined(OpenBSD)
+    /* OpenBSD -------------------------------------------------- */
+#include <sys/stat.h>
+#include <sys/sysctl.h>
+#include <string.h>
+#include <errno.h>
+#include <paths.h>
+#include <limits.h>
+#include <unistd.h>
 #else
 #error unknown operating system
 #endif
@@ -98,8 +108,13 @@ get_proc_pathname (char **outpath)
     linkname[rlsize] = '\0';
 
     *outpath = (char *)malloc (rlsize * sizeof (char));
-    strncpy (*outpath, linkname, rlsize);
-    goto done;
+    if (*outpath != NULL) {
+        strncpy (*outpath, linkname, rlsize);
+        goto done;
+    }
+    else {
+        error ("malloc error", __LINE__);
+    }
 
 error:
     len = -1;
@@ -194,10 +209,6 @@ done:
     *outpath = getexecname ();
     len = strlen (*outpath);
 #else
-/*#if defined (__SUNPRO_C)*/
-    /* Solaris: Sun Compiler. ----------------------------------- */
-/*#elif defined (__GNUC__) && __GNUC__ >= 2*/
-    /* Solaris: GCC/Clang Compiler. ----------------------------- */
     static char tmp[PATH_MAX];
     static ssize_t rlsize;
 
@@ -212,6 +223,9 @@ done:
         strncpy (*outpath, tmp, rlsize);
         goto done;
     }
+    else {
+        error ("malloc error", __LINE__);
+    }
 
 error:
     len = -1;
@@ -220,16 +234,29 @@ done:
     len = rlsize;
 
 #endif
-/*#endif*/
 #elif defined(__unix__)
+    int len;
 #if (defined(__APPLE__) && defined(__MACH__))
     /* Mac OS, Darwin ------------------------------------------- */
+    /*
+     * note: this part was not tested, so it may not work at all
+     * code taken from:
+     *   http://stackoverflow.com/questions/799679
+     */
     char path[PATH_MAX];
     uint32_t size = sizeof (path);
 
+    /*
+     * http://developer.apple.com/documentation/Darwin/Reference/ManPages/man3/dyld.3.html
+     *
+     * Note that _NSGetExecutablePath() will return "a path" to the exe-cutable 
+     * executable cutable not a "real path" to the executable.  That is, the path may be 
+     * a symbolic link and not the real file.
+     * With deep directories the total bufsize needed could be more than MAXPATHLEN.
+     */
     if (_NSGetExecutablePath (path, &size) == 0) {
-        if ((*outpath = (char *)malloc (cb * sizeof (char))) != NULL) {
-            strncpy (*outpath, tmp, cb);
+        if ((*outpath = (char *)malloc (size * sizeof (char))) != NULL) {
+            strncpy (*outpath, tmp, size);
             len = size;
         }
         else {
@@ -243,11 +270,10 @@ done:
     }
 
 #elif defined(__FreeBSD__)
-    /* BSD (DragonFly BSD, FreeBSD, OpenBSD, NetBSD). ----------- */
-    int len;
+    /* BSD (DragonFly BSD, FreeBSD, NetBSD). -------------------- */
     /**
      * code taken from:
-     * http://stackoverflow.com/questions/799679/programatically-retrieving-the-absolute-path-of-an-os-x-command-line-app
+     *   http://stackoverflow.com/questions/799679
      */
     static int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
     static char tmp[PATH_MAX];
@@ -265,6 +291,117 @@ done:
         error ("malloc error", __LINE__);
         len = -1;
     }
+
+#elif defined(OpenBSD)
+    /* OpenBSD -------------------------------------------------- */
+    static char tmp[PATH_MAX];
+    char **argv, *prog, *path, *p, *rpath;
+    size_t end;
+    int mib[4], tmplen;
+    struct stat sbuf;
+
+    /*
+     * On OpenBSD there is no way to find a real full path
+     * of the running process, except of ptrace'ing it (rebuild kernel, yep)
+     */
+
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC_ARGS;
+    mib[2] = getpid ();
+    mib[3] = KERN_PROC_ARGV;
+
+    /* find out argv[] of the current proc first */
+
+    if (sysctl (mib, 4, NULL, &end, NULL, 0) == -1) {
+        error (strerror (errno), __LINE__);
+        goto error;
+    }
+
+    argv = NULL;
+
+    if ((argv = malloc (end)) == NULL) {
+        error ("malloc error", __LINE__);
+        goto error;
+    }
+
+    if (sysctl (mib, 4, argv, &end, NULL, 0) == -1) {
+        error (strerror (errno), __LINE__);
+        goto error;
+    }
+
+    /* find a full path as it done by `which' command */
+
+    prog = argv[0];
+
+    /*
+     * we've to trust that argv[0] is a full path to executable,
+     * but openbsd allocates for argv[0] about 16 bytes only (!)
+     */
+
+    if (strchr (prog, '/') == prog) {
+        if ((stat (prog, &sbuf) == 0) && S_ISREG (sbuf.st_mode) 
+                && access(prog, X_OK) == 0)
+        {
+            len = strlen (prog);
+            *outpath = (char *)malloc (len * sizeof (char));
+            if (*outpath == NULL) {
+                error ("malloc error", __LINE__);
+                goto error;
+            }
+            strncpy (*outpath, prog, len);
+            goto done;
+        }
+    }
+
+    /*
+     * assume that PATH was not compromised somehow...
+     */
+
+    if ((path = getenv ("PATH")) == NULL || *path == '\0')
+        path = _PATH_DEFPATH;
+
+    while ((p = strsep (&path, ":")) != NULL) {
+        if (*p == '\0')
+            p = ".";
+
+        tmplen = strlen (p);
+        while (tmplen > 0 && p[tmplen - 1] == '/')
+            p[--tmplen] = '\0';     /* strip trailing `/' */
+
+        tmplen = snprintf (tmp, sizeof (tmp), "%s/%s", p, prog);
+        if (tmplen < 0 || tmplen >= sizeof (tmp)) {
+            error (strerror (ENAMETOOLONG), __LINE__);
+            goto error;
+        }
+
+        if ((rpath = realpath (tmp, NULL)) == NULL) {
+            error (strerror (errno), __LINE__);
+            goto error;
+        }
+
+        if ((stat (rpath, &sbuf) == 0) && S_ISREG (sbuf.st_mode)
+                && access (rpath, X_OK) == 0)
+        {
+            len = strlen (rpath);
+            *outpath = (char *)malloc (len * sizeof (char));
+            if (*outpath == NULL) {
+                error ("malloc error", __LINE__);
+                goto error;
+            }
+            strncpy (*outpath, rpath, len);
+            goto done;
+        }
+    } /* while ((p = strsep (&path, ":")) != NULL) */
+
+error:
+    len = -1;
+
+done:
+    if (argv != NULL)
+        free (argv);
+
+    if (rpath != NULL)
+        free (rpath);
 
 #else
 #error unknown operating system

@@ -3,10 +3,6 @@ use ExtUtils::MakeMaker;
 
 my %opts;
 
-if ( $^O eq 'MSWin32' ) {
-#    $opts{ 'DEFINE' } = '-D_UNICODE';
-}
-
 WriteMakefile(
     NAME              => 'Proc::Pathname',
     VERSION_FROM      => 'lib/Proc/Pathname.pm',
