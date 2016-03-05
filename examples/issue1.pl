@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 
 # Note: this is a test file for staticperl binary
-# Issue: `(deleted)' at the end (on gnu/linux at least)
+# Issue: 
+#  * `(deleted)' at the end (on gnu/linux at least)
+#  * on openbsd is undef (as version 0.06)
 
 use strict;
 use warnings;
