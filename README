@@ -1,11 +1,11 @@
-Proc-Pathname version 0.05
+Proc-Pathname version 0.08
 ==========================
 
 Proc::Pathname - Retrieves the fully qualified path for the program
 
-A common way to retrieve a path for the program is using the variable $0.
-However, sometimes it is not working for you. So, you have to find a way
-to retrieve the path for the program somehow differently.
+A common way to retrieve a path for the program is using the variables 
+$0 and $^X. However, sometimes it is not working for you. So, you have 
+to find a way to retrieve the path for the program somehow differently.
 
 The module is using system calls to do the job and written as XS module.
 This module was made for mine private purposes, mostly, for staticperl.
@@ -26,6 +26,14 @@ This module requires these other modules and libraries:
 
   Test
 
+BUGS
+
+Completely broken on OpenBSD as of version 0.08, because of
+OpenBSD does not provide a suitable way to determine
+a location of a running process. Current implementation is
+based on the program `which' and it tries to find a path 
+via the PATH environment variable.
+
 COPYRIGHT AND LICENCE
 
 Copyright (C) 2016 by Vitaliy V. Tokarev
@@ -33,5 +41,3 @@ Copyright (C) 2016 by Vitaliy V. Tokarev
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.22.0 or,
 at your option, any later version of Perl 5 you may have available.
-
-

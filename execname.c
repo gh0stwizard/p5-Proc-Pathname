@@ -383,7 +383,7 @@ done:
             goto error;
         }
 
-\        if ((rpath = realpath (tmp, NULL)) == NULL) {
+        if ((rpath = realpath (tmp, NULL)) == NULL) {
             error (strerror (errno), __LINE__);
             goto error;
         }

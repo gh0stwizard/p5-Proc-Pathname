@@ -47,6 +47,8 @@ This module was made for mine private purposes, mostly, for staticperl.
 
 =item * On Mac OS (Darwin) uses _NSGetExecutablePath() call (not tested)
 
+=item * On OpenBSD uses PATH environment variable (see BUGS for details)
+
 =back 
 
 =head2 EXPORT
@@ -68,6 +70,14 @@ wrong returns nothing (undef).
         or die "failed to get proc pathname";
 
 =back
+
+=head2 BUGS
+
+Completely broken on OpenBSD as of version 0.08, because of
+OpenBSD does not provide a suitable way to determine
+a location of a running process. Current implementation is
+based on the program `which' and it tries to find a path 
+via the PATH environment variable.
 
 =head1 AUTHOR
 
