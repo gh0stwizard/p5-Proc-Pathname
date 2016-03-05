@@ -1,11 +1,15 @@
 Changes
-examples/proc_pathname.pl
+examples/build.sh
+examples/fork.pl
+examples/issue1.pl
+examples/README
+examples/simple.pl
 execname.c
 execname.h
 lib/Proc/Pathname.pm
+LICENSE
 Makefile.PL
 MANIFEST			This list of files
-MANIFEST.SKIP
 META.json
 META.yml
 Pathname.xs

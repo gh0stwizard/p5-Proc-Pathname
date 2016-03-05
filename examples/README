@@ -1,0 +1,13 @@
+Usage
+===========
+
+simple.pl:
+  perl simple.pl
+
+issue1.pl:
+  sh build.sh issue1
+  ./issue1
+
+fork.pl
+  sh build.sh fork
+  ./fork
