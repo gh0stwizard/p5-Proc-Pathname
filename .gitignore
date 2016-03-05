@@ -13,3 +13,4 @@ perlmain.c
 pm_to_blib
 examples/fork
 examples/issue1
+examples/crash

@@ -8,6 +8,10 @@ issue1.pl:
   sh build.sh issue1
   ./issue1
 
-fork.pl
+fork.pl:
   sh build.sh fork
   ./fork
+
+crash.pl:
+  sh build.sh crash
+  ./crash
